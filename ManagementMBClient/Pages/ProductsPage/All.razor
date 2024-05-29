@@ -1,0 +1,98 @@
+﻿@page "/product"
+@inject HttpClient _http
+@using ManagementMBClient.DTOs
+@using System.Net.Http.Json
+@inject NavigationManager _navigationManager
+
+<PageTitle>Products</PageTitle>
+
+<h1>Products</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <a href='/product/add' class="btn btn-primary" role="button">
+            <i class="fas fa-user-plus"></i>
+            Add Product
+        </a>
+    </div>
+    <div class="input-group col">
+        <input type="text" class="form-control" placeholder="Search product by Name or Description"
+               @bind="SearchString" @bind:event="oninput" @onkeyup="FilterClients" />
+    </div>
+</div>
+@if (_allProducts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in _filteredProducts)
+            {
+                <tr>
+                    <td>@product.Id.ToString()</td>
+                    <td>@product.Name</td>
+                    <td>@product.CostPrice</td>
+                    <td>@product.Price</td>
+                    <td>@product.CostPrice</td>
+                    <td>@product.Quantity</td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="() => EditItem(product.Id)">Edit</button>
+                        <button class="btn btn-danger" @onclick="() => DeleteItem(product.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    protected string SearchString { get; set; } = string.Empty;
+    private ProductDTO[]? _allProducts;
+    private ProductDTO[]? _filteredProducts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        
+        _allProducts = await _http.GetFromJsonAsync<ProductDTO[]>("api/Products");
+            var items = _allProducts;
+            SearchString = string.Empty;
+            FilterClients();
+       
+    }
+
+    private async Task DeleteItem(Guid id)
+    {
+        await _http.DeleteAsync($"product?Id={id}");
+        await OnInitializedAsync(); // Refresh the list
+    }
+
+    private void EditItem(Guid id)
+    {
+        _navigationManager.NavigateTo($"/product/edit/{id}", true);
+    }
+
+    protected void FilterClients()
+    {
+            if (!string.IsNullOrEmpty(SearchString))
+            {
+                _filteredProducts = _allProducts.Where(x => x.Name.Contains(SearchString) || x.Name.Contains(SearchString))
+                    .ToArray();
+            }
+            else
+            {
+                _filteredProducts = _allProducts;
+            }
+    }
+
+}
